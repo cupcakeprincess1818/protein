@@ -1,118 +1,160 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Teachable Machine - Futuristic UI</title>
-<style>
+  <title>Teachable Machine Image Model</title>
+  <style>
     body {
-        margin: 0;
-        font-family: 'Orbitron', sans-serif;
-        background: #050007;
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
+      background-color: #000;
+      color: #c77dff;
+      font-family: "Arial", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
     }
 
-    .container {
-        display: flex;
-        gap: 30px;
-        align-items: center;
+    #container {
+      display: flex;
+      gap: 25px;
+      align-items: flex-start;
     }
 
-    #webcam-container canvas {
-        width: 350px !important;
-        height: 350px !important;
-        border-radius: 20px;
-        box-shadow: 0 0 25px rgba(180, 0, 255, 0.6);
+    /* Neon border pulse */
+    @keyframes neonPulse {
+      0% { box-shadow: 0 0 10px #8b2cff; }
+      50% { box-shadow: 0 0 25px #d184ff; }
+      100% { box-shadow: 0 0 10px #8b2cff; }
     }
 
+    /* Neon slide/sweep animation */
+    @keyframes sweep {
+      0% { opacity: 0; transform: translateX(-100%); }
+      50% { opacity: .5; transform: translateX(100%); }
+      100% { opacity: 0; transform: translateX(200%); }
+    }
+
+    #webcam-container {
+      position: relative;
+      width: 480px;
+      height: auto;
+      border: 2px solid #c77dff;
+      border-radius: 12px;
+      overflow: hidden;
+      animation: neonPulse 3s infinite ease-in-out;
+    }
+
+    /* Sweeping neon gloss effect */
+    #webcam-container::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -150%;
+      width: 120%;
+      height: 100%;
+      background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(170, 0, 255, 0.3) 50%,
+        transparent 100%
+      );
+      animation: sweep 3s infinite;
+    }
+
+    /* Floating neon panel */
     #label-panel {
-        width: 250px;
-        padding: 20px;
-        background: rgba(20, 0, 30, 0.6);
-        backdrop-filter: blur(8px);
-        border-radius: 15px;
-        box-shadow: 0 0 25px rgba(180, 0, 255, 0.5);
-    }
-
-    #label-panel div {
-        margin-bottom: 10px;
-        padding: 10px;
-        background: rgba(80, 0, 130, 0.3);
-        border-radius: 10px;
-        font-size: 14px;
+      background: rgba(40, 0, 60, 0.6);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #c77dff;
+      width: 230px;
+      box-shadow: 0 0 25px #9d4edd;
+      backdrop-filter: blur(8px);
+      animation: neonPulse 4s infinite alternate;
     }
 
     button {
-        position: absolute;
-        top: 30px;
-        padding: 12px 25px;
-        border: none;
-        border-radius: 8px;
-        background: linear-gradient(90deg, #7a00ff, #b300ff);
-        color: white;
-        cursor: pointer;
-        font-size: 16px;
-        letter-spacing: 1px;
-        box-shadow: 0 0 12px rgba(180,0,255,0.8);
+      background: #9d4edd;
+      border: none;
+      padding: 12px 22px;
+      color: white;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      box-shadow: 0 0 15px #c77dff;
+      transition: 0.25s;
     }
 
+    /* Button pulse */
     button:hover {
-        box-shadow: 0 0 20px rgba(200,0,255,1);
+      transform: scale(1.05);
+      box-shadow: 0 0 35px #e0aaff;
     }
-</style>
+  </style>
 </head>
-<body>
-<button onclick="init()">Start</button>
-<div class="container">
-    <div id="webcam-container"></div>
-    <div id="label-panel"><div style="opacity:0.6">Waiting for model...</div></div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-<script>
-    const URL = "./my_model/";
+<body>
+  <div id="container">
+    <div>
+      <button type="button" onclick="init()">Start</button>
+      <div id="webcam-container"></div>
+    </div>
+
+    <div id="label-panel">
+      <h3 style="margin-top:0;">Predictions</h3>
+      <div id="label-container"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+  <script type="text/javascript">
+    const URL = "YOUR_MODEL_URL_HERE/";
 
     let model, webcam, labelContainer, maxPredictions;
 
     async function init() {
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
 
-        model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
 
-        const flip = true;
-        webcam = new tmImage.Webcam(350, 350, flip);
-        await webcam.setup();
-        await webcam.play();
-        window.requestAnimationFrame(loop);
+      webcam = new tmImage.Webcam(300, 300, true);
+      await webcam.setup();
+      await webcam.play();
+      window.requestAnimationFrame(loop);
 
-        document.getElementById("webcam-container").appendChild(webcam.canvas);
-        labelContainer = document.getElementById("label-panel");
-        labelContainer.innerHTML = "";
-        for (let i = 0; i < maxPredictions; i++) {
-            labelContainer.appendChild(document.createElement("div"));
-        }
+      document.getElementById("webcam-container").appendChild(webcam.canvas);
+
+      labelContainer = document.getElementById("label-container");
+      labelContainer.innerHTML = "";
+
+      for (let i = 0; i < maxPredictions; i++) {
+        const div = document.createElement("div");
+        div.style.margin = "6px 0";
+        div.style.fontSize = "16px";
+        labelContainer.appendChild(div);
+      }
     }
 
     async function loop() {
-        webcam.update();
-        await predict();
-        window.requestAnimationFrame(loop);
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
     }
 
     async function predict() {
-        const prediction = await model.predict(webcam.canvas);
-        for (let i = 0; i < maxPredictions; i++) {
-            const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-            labelContainer.childNodes[i].innerHTML = classPrediction;
-        }
+      const prediction = await model.predict(webcam.canvas);
+
+      for (let i = 0; i < maxPredictions; i++) {
+        labelContainer.childNodes[i].innerHTML =
+          prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+      }
     }
-</script>
+  </script>
 </body>
 </html>
